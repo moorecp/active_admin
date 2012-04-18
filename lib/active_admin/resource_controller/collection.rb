@@ -42,14 +42,17 @@ module ActiveAdmin
 
         def sort_order(chain)
           params[:order] ||= active_admin_config.sort_order
-          if params[:order] && params[:order] =~ /^([\w\_\.]+)_(desc|asc)$/
-            column = $1
-            order  = $2
+          if params[:order] && (matches = params[:order].to_s.scan(/([\w\_\.]+)_(desc|asc)/))
             table  = active_admin_config.resource_table_name
-            table_column = (column =~ /\./) ? column :
-              "#{table}.#{active_admin_config.resource_quoted_column_name(column)}"
+            order_string = matches.map do |match|
+              column = match[0]
+              order  = match[1]
+              table_column = (column =~ /\./) ? column :
+                "#{table}.#{active_admin_config.resource_quoted_column_name(column)}"
+              "#{table_column} #{order}"
+            end.join(", ").strip
 
-            chain.reorder("#{table_column} #{order}")
+            chain.reorder(order_string)
           else
             chain # just return the chain
           end
